@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kigali_directory_app/screens/auth/login.dart';
 
 void main() {
   runApp(const KigaliApp());
@@ -7,15 +8,33 @@ void main() {
 class KigaliApp extends StatelessWidget {
   const KigaliApp({super.key});
 
+  // Colors
+  static const Color primaryTeal = Color(0xFF14A8A1);
+  static const Color bgColor = Color(0xFFF8F9FA);
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primaryColor: const Color(0xFF14A8A1),
-        scaffoldBackgroundColor: const Color(0xFFF8F9FA),
+        primaryColor: primaryTeal,
+        scaffoldBackgroundColor: bgColor,
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: primaryTeal,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: primaryTeal,
+          primary: primaryTeal,
+          surface: Colors.white,
+        ),
       ),
-      home: MainNavigation(),
+      home: LoginScreen(),
     );
   }
 }
@@ -47,8 +66,7 @@ class _MainNavigationState extends State<MainNavigation> {
 
   @override
   Widget build(BuildContext context) {
-    const Color primaryTeal = Color(0xFF14A8A1);
-    const Color inactiveGrey = Color(0xFF94A3B8);
+    final theme = Theme.of(context);
 
     return Scaffold(
       body: _pages[_selectedIndex],
@@ -56,35 +74,42 @@ class _MainNavigationState extends State<MainNavigation> {
         decoration: const BoxDecoration(
           border: Border(top: BorderSide(color: Color(0xFFE2E8F0), width: 1)),
         ),
-        child: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          currentIndex: _selectedIndex,
-          onTap: _onItemTapped,
-          backgroundColor: Colors.white,
-          selectedItemColor: primaryTeal,
-          unselectedItemColor: inactiveGrey,
-          showUnselectedLabels: true,
-          selectedFontSize: 12,
-          unselectedFontSize: 12,
-          elevation: 10,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              label: 'Directory',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.description_outlined),
-              label: 'My Listings',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.map_outlined),
-              label: 'Map',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.settings_outlined),
-              label: 'Settings',
-            ),
-          ],
+        child: Theme(
+          data: Theme.of(context).copyWith(
+            splashColor: Colors.transparent,
+            highlightColor: Colors.transparent,
+            splashFactory: NoSplash.splashFactory,
+          ),
+          child: BottomNavigationBar(
+            type: BottomNavigationBarType.fixed,
+            currentIndex: _selectedIndex,
+            onTap: _onItemTapped,
+            backgroundColor: theme.colorScheme.surface,
+            selectedItemColor: theme.colorScheme.primary,
+            unselectedItemColor: theme.colorScheme.onSurface.withOpacity(0.5),
+            showUnselectedLabels: true,
+            selectedFontSize: 12,
+            unselectedFontSize: 12,
+            elevation: 0,
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.home_outlined),
+                label: 'Directory',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.description_outlined),
+                label: 'My Listings',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.map_outlined),
+                label: 'Map',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.settings_outlined),
+                label: 'Settings',
+              ),
+            ],
+          ),
         ),
       ),
     );
