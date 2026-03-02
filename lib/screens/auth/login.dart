@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kigali_directory_app/main.dart';
+import 'package:kigali_directory_app/screens/auth/signup.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -9,6 +10,18 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
+
+  // RegEx for a standard email format
+  final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+
+  void _submitForm() {
+    if (_formKey.currentState!.validate()) {
+      // If valid, proceed to Firebase Auth
+      print("Form is valid! Registering ${_emailController.text}");
+    }
+  }
+
   // Local state for UI toggles
   bool _isPasswordObscured = true;
 
@@ -27,138 +40,158 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: KigaliApp.bgColor,
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Icon
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: KigaliApp.primaryTeal,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Icon(
-                  Icons.location_on,
-                  color: Colors.white,
-                  size: 40,
-                ),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                "Welcome Back",
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E293B),
-                ),
-              ),
-              const Text(
-                "Login to Kigali City Services Directory",
-                style: TextStyle(color: Colors.grey),
-              ),
-              const SizedBox(height: 40),
-
-              // Email Field
-              _buildTextField(
-                label: "Email Address",
-                icon: Icons.email_outlined,
-                hint: "you@example.com",
-                controller: _emailController,
-              ),
-              const SizedBox(height: 20),
-
-              // Password Field with Toggle
-              _buildTextField(
-                label: "Password",
-                icon: Icons.lock_outline,
-                hint: "••••••••",
-                isPassword: _isPasswordObscured,
-                controller: _passwordController,
-                suffix: IconButton(
-                  icon: Icon(
-                    _isPasswordObscured
-                        ? Icons.visibility_off
-                        : Icons.visibility,
-                    color: Colors.grey,
-                    size: 20,
+      body: Form(
+        key: _formKey,
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Icon
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: KigaliApp.primaryTeal,
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  onPressed: () {
-                    setState(() {
-                      _isPasswordObscured = !_isPasswordObscured;
-                    });
+                  child: const Icon(
+                    Icons.location_on,
+                    color: Colors.white,
+                    size: 40,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  "Welcome Back",
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E293B),
+                  ),
+                ),
+                const Text(
+                  "Login to Kigali City Services Directory",
+                  style: TextStyle(color: Colors.grey),
+                ),
+                const SizedBox(height: 40),
+
+                // Email Field
+                _buildTextFormField(
+                  label: "Email Address",
+                  icon: Icons.email_outlined,
+                  hint: "you@example.com",
+                  controller: _emailController,
+                  validator: (value) {
+                    if (value == null || value.isEmpty)
+                      return "Email is required";
+                    if (!emailRegex.hasMatch(value))
+                      return "Enter a valid email address";
+                    return null;
                   },
                 ),
-              ),
+                const SizedBox(height: 20),
 
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {},
-                  child: const Text(
-                    "Forgot?",
-                    style: TextStyle(color: KigaliApp.primaryTeal),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Login Button
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: () {
-                    // This is where you will call your Auth Service later
-                    print("Login Email: ${_emailController.text}");
+                // Password Field with Toggle
+                _buildTextFormField(
+                  label: "Password",
+                  icon: Icons.lock_outline,
+                  hint: "••••••••",
+                  isPassword: _isPasswordObscured,
+                  controller: _passwordController,
+                  validator: (value) {
+                    if (value == null || value.length < 6)
+                      return "Password must be 6+ characters";
+                    return null;
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: KigaliApp.primaryTeal,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                  suffix: IconButton(
+                    icon: Icon(
+                      _isPasswordObscured
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                      color: Colors.grey,
+                      size: 20,
                     ),
-                    elevation: 0,
-                  ),
-                  child: const Text(
-                    "Login",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    onPressed: () {
+                      setState(() {
+                        _isPasswordObscured = !_isPasswordObscured;
+                      });
+                    },
                   ),
                 ),
-              ),
-              const SizedBox(height: 24),
 
-              // Sign Up Toggle
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text("Don't have an account? "),
-                  GestureDetector(
-                    onTap: () {}, // Navigate to Sign Up
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {},
                     child: const Text(
-                      "Sign Up",
+                      "Forgot?",
                       style: TextStyle(color: KigaliApp.primaryTeal),
                     ),
                   ),
-                ],
-              ),
-            ],
+                ),
+                const SizedBox(height: 16),
+
+                // Login Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: _submitForm,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: KigaliApp.primaryTeal,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: const Text(
+                      "Login",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Sign Up Toggle
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text("Don't have an account? "),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const SignupScreen(),
+                          ),
+                        );
+                      },
+                      child: const Text(
+                        "Sign Up",
+                        style: TextStyle(color: KigaliApp.primaryTeal),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildTextField({
+  Widget _buildTextFormField({
     required String label,
     required IconData icon,
     required String hint,
     required TextEditingController controller,
+    String? Function(String?)? validator,
     bool isPassword = false,
     Widget? suffix,
   }) {
@@ -173,9 +206,10 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
         const SizedBox(height: 8),
-        TextField(
+        TextFormField(
           controller: controller,
           obscureText: isPassword,
+          validator: validator,
           cursorColor: Colors.black,
           decoration: InputDecoration(
             hintText: hint,
