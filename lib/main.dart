@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kigali_directory_app/screens/auth/login.dart';
+import 'package:kigali_directory_app/screens/directory/directory_home.dart';
 
 void main() {
   runApp(const KigaliApp());
@@ -9,32 +10,40 @@ class KigaliApp extends StatelessWidget {
   const KigaliApp({super.key});
 
   // Colors
-  static const Color primaryTeal = Color(0xFF14A8A1);
-  static const Color bgColor = Color(0xFFF8F9FA);
+  static const Color primaryNavy = Color(0xFF0F172A);
+  static const Color accentGold = Color(0xFFEAB308);
+  static const Color cardNavy = Color(0xFF1E293B);
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primaryColor: primaryTeal,
-        scaffoldBackgroundColor: bgColor,
+        brightness: Brightness.dark,
+        primaryColor: accentGold,
+        scaffoldBackgroundColor: primaryNavy,
+
+        // Button styles
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: primaryTeal,
-            foregroundColor: Colors.white,
+            backgroundColor: accentGold,
+            foregroundColor: primaryNavy,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
+            elevation: 0,
           ),
         ),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: primaryTeal,
-          primary: primaryTeal,
-          surface: Colors.white,
+
+        // ColorScheme
+        colorScheme: const ColorScheme.dark(
+          primary: accentGold,
+          secondary: accentGold,
+          surface: cardNavy,
+          background: primaryNavy,
         ),
       ),
-      home: LoginScreen(),
+      home: const LoginScreen(),
     );
   }
 }
@@ -50,19 +59,14 @@ class MainNavigation extends StatefulWidget {
 class _MainNavigationState extends State<MainNavigation> {
   int _selectedIndex = 0;
 
-  // List of pages to display for each tab
   final List<Widget> _pages = [
-    const Center(child: Text('Directory Page')),
+    const DirectoryScreen(),
     const Center(child: Text('My Listings Page')),
     const Center(child: Text('Map Page')),
     const Center(child: Text('Settings Page')),
   ];
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
+  void _onItemTapped(int index) => setState(() => _selectedIndex = index);
 
   @override
   Widget build(BuildContext context) {
@@ -71,45 +75,36 @@ class _MainNavigationState extends State<MainNavigation> {
     return Scaffold(
       body: _pages[_selectedIndex],
       bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: Color(0xFFE2E8F0), width: 1)),
+        decoration: BoxDecoration(
+          border: Border(
+            top: BorderSide(color: Colors.white.withOpacity(0.1), width: 0.5),
+          ),
         ),
-        child: Theme(
-          data: Theme.of(context).copyWith(
-            splashColor: Colors.transparent,
-            highlightColor: Colors.transparent,
-            splashFactory: NoSplash.splashFactory,
-          ),
-          child: BottomNavigationBar(
-            type: BottomNavigationBarType.fixed,
-            currentIndex: _selectedIndex,
-            onTap: _onItemTapped,
-            backgroundColor: theme.colorScheme.surface,
-            selectedItemColor: theme.colorScheme.primary,
-            unselectedItemColor: theme.colorScheme.onSurface.withOpacity(0.5),
-            showUnselectedLabels: true,
-            selectedFontSize: 12,
-            unselectedFontSize: 12,
-            elevation: 0,
-            items: const [
-              BottomNavigationBarItem(
-                icon: Icon(Icons.home_outlined),
-                label: 'Directory',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.description_outlined),
-                label: 'My Listings',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.map_outlined),
-                label: 'Map',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.settings_outlined),
-                label: 'Settings',
-              ),
-            ],
-          ),
+        child: BottomNavigationBar(
+          type: BottomNavigationBarType.fixed,
+          currentIndex: _selectedIndex,
+          onTap: _onItemTapped,
+          backgroundColor: KigaliApp.primaryNavy,
+          selectedItemColor: theme.colorScheme.primary,
+          unselectedItemColor: Colors.white.withOpacity(0.5),
+          showUnselectedLabels: true,
+          selectedFontSize: 11,
+          unselectedFontSize: 11,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home_filled),
+              label: 'Directory',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.bookmark),
+              label: 'Bookmarks',
+            ),
+            BottomNavigationBarItem(icon: Icon(Icons.star), label: 'Reviews'),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.settings),
+              label: 'Settings',
+            ),
+          ],
         ),
       ),
     );
