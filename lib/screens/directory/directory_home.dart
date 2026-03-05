@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kigali_directory_app/main.dart';
+import 'package:kigali_directory_app/screens/directory/directory_description.dart';
 
 class DirectoryScreen extends StatelessWidget {
   const DirectoryScreen({super.key});
@@ -93,25 +94,28 @@ class DirectoryScreen extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 children: [
                   _buildDirectoryCard(
+                    context,
                     title: "Kigali Public Library",
                     category: "Public Service",
                     location: "KG 8 Ave, Kacyiru",
                     image:
-                        "https://images.unsplash.com/photo-1521587760476-6c12a4b040da", // Placeholder
+                        "https://images.unsplash.com/photo-1521587760476-6c12a4b040da",
                   ),
                   _buildDirectoryCard(
+                    context,
                     title: "Question Coffee",
                     category: "Café & Dining",
                     location: "KG 8 Ave, Gishushu",
                     image:
-                        "https://images.unsplash.com/photo-1554118811-1e0d58224f24", // Placeholder
+                        "https://images.unsplash.com/photo-1554118811-1e0d58224f24",
                   ),
                   _buildDirectoryCard(
+                    context,
                     title: "Nyandungu Urban Wetland",
                     category: "Park",
                     location: "Kigali-Muhanga Rd, Kigali",
                     image:
-                        "https://images.unsplash.com/photo-1554118811-1e0d58224f24", // Placeholder
+                        "https://images.unsplash.com/photo-1554118811-1e0d58224f24",
                   ),
                 ],
               ),
@@ -122,6 +126,7 @@ class DirectoryScreen extends StatelessWidget {
     );
   }
 
+  // Reusable Category Chip
   Widget _buildCategoryChip(String label, {bool isActive = false}) {
     return Container(
       margin: const EdgeInsets.only(right: 8),
@@ -140,84 +145,104 @@ class DirectoryScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDirectoryCard({
+  // Reusable Directory Card
+  Widget _buildDirectoryCard(
+    BuildContext context, {
     required String title,
     required String category,
     required String location,
     required String image,
   }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: KigaliApp.cardNavy,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Image placeholder using a Container for the demo
-          Container(
-            height: 150,
-            decoration: BoxDecoration(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(16),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DescriptionScreen(
+              title: title,
+              category: category,
+              location: location,
+            ),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: KigaliApp.cardNavy,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Card Image
+            Container(
+              height: 150,
+              decoration: BoxDecoration(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
+                color: Colors.grey.shade800,
               ),
-              color: Colors.grey.shade800,
+              child: const Center(
+                child: Icon(Icons.image, color: Colors.white24, size: 40),
+              ),
             ),
-            child: const Center(
-              child: Icon(Icons.image, color: Colors.white24, size: 40),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: KigaliApp.accentGold.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    category,
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
                     style: const TextStyle(
-                      color: KigaliApp.accentGold,
-                      fontSize: 12,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.location_on,
-                      color: Colors.white38,
-                      size: 16,
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
                     ),
-                    const SizedBox(width: 4),
-                    Text(
-                      location,
-                      style: const TextStyle(color: Colors.white38),
+                    decoration: BoxDecoration(
+                      color: KigaliApp.accentGold.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(4),
                     ),
-                  ],
-                ),
-              ],
+                    child: Text(
+                      category,
+                      style: const TextStyle(
+                        color: KigaliApp.accentGold,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.location_on,
+                        color: Colors.white38,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        location,
+                        style: const TextStyle(
+                          color: Colors.white38,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

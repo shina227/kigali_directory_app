@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kigali_directory_app/screens/auth/login.dart';
 import 'package:kigali_directory_app/screens/directory/directory_home.dart';
+import 'package:kigali_directory_app/screens/my_listings/my_listings.dart';
 
 void main() {
   runApp(const KigaliApp());
@@ -61,7 +62,7 @@ class _MainNavigationState extends State<MainNavigation> {
 
   final List<Widget> _pages = [
     const DirectoryScreen(),
-    const Center(child: Text('My Listings Page')),
+    const MyListingsScreen(),
     const Center(child: Text('Map Page')),
     const Center(child: Text('Settings Page')),
   ];
@@ -92,16 +93,23 @@ class _MainNavigationState extends State<MainNavigation> {
           unselectedFontSize: 11,
           items: const [
             BottomNavigationBarItem(
-              icon: Icon(Icons.home_filled),
+              icon: Icon(Icons.home_outlined),
+              activeIcon: Icon(Icons.home_filled),
               label: 'Directory',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.bookmark),
-              label: 'Bookmarks',
+              icon: Icon(Icons.description_outlined),
+              activeIcon: Icon(Icons.description),
+              label: 'My Listings',
             ),
-            BottomNavigationBarItem(icon: Icon(Icons.star), label: 'Reviews'),
             BottomNavigationBarItem(
-              icon: Icon(Icons.settings),
+              icon: Icon(Icons.map_outlined),
+              activeIcon: Icon(Icons.map),
+              label: 'Map',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.settings_outlined),
+              activeIcon: Icon(Icons.settings),
               label: 'Settings',
             ),
           ],
