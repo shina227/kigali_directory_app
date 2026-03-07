@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kigali_directory_app/main.dart';
 import 'package:kigali_directory_app/screens/auth/signup.dart';
+import 'package:kigali_directory_app/services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -17,14 +18,32 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  void _submitForm() {
+  bool _isLoading = false;
+
+  void _submitForm() async {
     if (_formKey.currentState!.validate()) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const MainNavigation()),
+      setState(() => _isLoading = true);
+
+      final error = await AuthService().login(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
       );
 
-      // debugPrint("Login Successful for: ${_emailController.text}");
+      setState(() => _isLoading = false);
+
+      if (error == null) {
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const MainNavigation()),
+        );
+      } else {
+        // FAILURE: Show the specific error (e.g., "Wrong password" or "User not found")
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error), backgroundColor: Colors.redAccent),
+        );
+      }
     }
   }
 
@@ -139,7 +158,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     width: double.infinity,
                     height: 56,
                     child: ElevatedButton(
-                      onPressed: _submitForm,
+                      onPressed: _isLoading ? null : _submitForm,
                       child: const Text(
                         "Login",
                         style: TextStyle(

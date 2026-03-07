@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kigali_directory_app/main.dart';
+import 'package:kigali_directory_app/services/auth_service.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -23,10 +24,20 @@ class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _confirmPasswordController =
       TextEditingController();
 
-  void _submitForm() {
+  void _submitForm() async {
     if (_formKey.currentState!.validate()) {
-      // Logic for Firebase Auth + Firestore
-      debugPrint("Creating account for: ${_emailController.text}");
+      final error = await AuthService().signUp(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+        _nameController.text.trim(),
+      );
+
+      if (error == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Check your email for verification!")),
+        );
+        Navigator.pop(context);
+      } else {}
     }
   }
 

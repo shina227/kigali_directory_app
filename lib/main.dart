@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:kigali_directory_app/screens/auth/login.dart';
 import 'package:kigali_directory_app/screens/directory/directory_home.dart';
+import 'package:kigali_directory_app/screens/map_view/map.dart';
 import 'package:kigali_directory_app/screens/my_listings/my_listings.dart';
+import 'package:kigali_directory_app/screens/settings/setings.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(const KigaliApp());
 }
 
@@ -44,7 +50,9 @@ class KigaliApp extends StatelessWidget {
           background: primaryNavy,
         ),
       ),
-      home: const LoginScreen(),
+      home: FirebaseAuth.instance.currentUser != null
+          ? const MainNavigation()
+          : const LoginScreen(),
     );
   }
 }
@@ -63,8 +71,8 @@ class _MainNavigationState extends State<MainNavigation> {
   final List<Widget> _pages = [
     const DirectoryScreen(),
     const MyListingsScreen(),
-    const Center(child: Text('Map Page')),
-    const Center(child: Text('Settings Page')),
+    const MapScreen(),
+    const SettingsScreen(),
   ];
 
   void _onItemTapped(int index) => setState(() => _selectedIndex = index);
