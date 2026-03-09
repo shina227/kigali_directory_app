@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:kigali_directory_app/main.dart';
+import 'package:kigali_directory_app/screens/auth/forgot_password.dart';
 import 'package:kigali_directory_app/screens/auth/signup.dart';
 import 'package:kigali_directory_app/services/auth_service.dart';
+import 'package:kigali_directory_app/utils/validators.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,7 +14,6 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
 
   bool _isPasswordObscured = true;
   final TextEditingController _emailController = TextEditingController();
@@ -105,13 +106,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     icon: Icons.email_outlined,
                     hint: "you@example.com",
                     controller: _emailController,
-                    validator: (value) {
-                      if (value == null || value.isEmpty)
-                        return "Email is required";
-                      if (!emailRegex.hasMatch(value))
-                        return "Enter a valid email address";
-                      return null;
-                    },
+                    validator: AppValidators.validateEmail,
                   ),
                   const SizedBox(height: 20),
 
@@ -122,11 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     hint: "••••••••",
                     isPassword: _isPasswordObscured,
                     controller: _passwordController,
-                    validator: (value) {
-                      if (value == null || value.length < 6)
-                        return "6+ characters required";
-                      return null;
-                    },
+                    validator: AppValidators.validatePassword,
                     suffix: IconButton(
                       icon: Icon(
                         _isPasswordObscured
@@ -144,7 +135,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () {},
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()),
+                      ),
                       child: const Text(
                         "Forgot?",
                         style: TextStyle(color: KigaliApp.accentGold),

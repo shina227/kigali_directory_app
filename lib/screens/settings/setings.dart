@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kigali_directory_app/main.dart';
+import 'package:kigali_directory_app/services/auth_service.dart';
+import 'package:kigali_directory_app/screens/auth/login.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -111,7 +113,7 @@ class SettingsScreen extends StatelessWidget {
                 trailing: Switch(
                   value: true,
                   onChanged: (val) {},
-                  activeColor: KigaliApp.accentGold,
+                  activeThumbColor: KigaliApp.accentGold,
                 ),
               ),
 
@@ -141,8 +143,17 @@ class SettingsScreen extends StatelessWidget {
                 icon: Icons.logout,
                 title: "Logout",
                 titleColor: Colors.redAccent,
-                onTap: () => {},
-                // Navigator.of(context).popToRoot(), // Return to Login
+                onTap: () async {
+                  await AuthService().logout();
+
+                  if (context.mounted) {
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (context) => const LoginScreen()),
+                          (route) => false,
+                    );
+                  }
+                },
               ),
             ],
           ),

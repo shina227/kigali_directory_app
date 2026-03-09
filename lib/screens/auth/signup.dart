@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kigali_directory_app/main.dart';
 import 'package:kigali_directory_app/services/auth_service.dart';
+import 'package:kigali_directory_app/utils/validators.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -11,11 +12,10 @@ class SignupScreen extends StatefulWidget {
 
 class _SignupScreenState extends State<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
-  final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
 
-  // Local state for password toggles
   bool _isPasswordObscured = true;
   bool _isConfirmObscured = true;
+  bool _isLoading = false;
 
   // Controllers
   final TextEditingController _nameController = TextEditingController();
@@ -26,18 +26,24 @@ class _SignupScreenState extends State<SignupScreen> {
 
   void _submitForm() async {
     if (_formKey.currentState!.validate()) {
+      setState(() => _isLoading = true);
+
       final error = await AuthService().signUp(
         _emailController.text.trim(),
         _passwordController.text.trim(),
         _nameController.text.trim(),
       );
 
+      setState(() => _isLoading = false);
+
       if (error == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Check your email for verification!")),
+        if (!mounted) return;
+
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const MainNavigation()),
+              (route) => false,
         );
-        Navigator.pop(context);
-      } else {}
+      }
     }
   }
 
@@ -100,10 +106,9 @@ class _SignupScreenState extends State<SignupScreen> {
                     icon: Icons.person_outline,
                     hint: "John Doe",
                     controller: _nameController,
-                    validator: (value) => (value == null || value.isEmpty)
-                        ? "Name is required"
-                        : null,
+                    validator: AppValidators.validateName,
                   ),
+
                   const SizedBox(height: 16),
 
                   // Email Address
@@ -112,14 +117,9 @@ class _SignupScreenState extends State<SignupScreen> {
                     icon: Icons.email_outlined,
                     hint: "you@example.com",
                     controller: _emailController,
-                    validator: (value) {
-                      if (value == null || value.isEmpty)
-                        return "Email is required";
-                      if (!emailRegex.hasMatch(value))
-                        return "Enter a valid email";
-                      return null;
-                    },
+                    validator: AppValidators.validateEmail,
                   ),
+
                   const SizedBox(height: 16),
 
                   // Password
@@ -129,9 +129,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     hint: "••••••••",
                     isPassword: _isPasswordObscured,
                     controller: _passwordController,
-                    validator: (value) => (value == null || value.length < 6)
-                        ? "6+ characters required"
-                        : null,
+                    validator: AppValidators.validatePassword,
                     suffix: IconButton(
                       icon: Icon(
                         _isPasswordObscured
@@ -154,11 +152,10 @@ class _SignupScreenState extends State<SignupScreen> {
                     hint: "••••••••",
                     isPassword: _isConfirmObscured,
                     controller: _confirmPasswordController,
-                    validator: (value) {
-                      if (value != _passwordController.text)
-                        return "Passwords do not match";
-                      return null;
-                    },
+                    validator: (value) => AppValidators.validateConfirmPassword(
+                      value,
+                      _passwordController.text,
+                    ),
                     suffix: IconButton(
                       icon: Icon(
                         _isConfirmObscured
@@ -179,7 +176,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     width: double.infinity,
                     height: 56,
                     child: ElevatedButton(
-                      onPressed: _submitForm,
+                      onPressed: _isLoading ? null : _submitForm,
                       child: const Text(
                         "Sign Up",
                         style: TextStyle(

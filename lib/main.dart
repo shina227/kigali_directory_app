@@ -6,10 +6,13 @@ import 'package:kigali_directory_app/screens/my_listings/my_listings.dart';
 import 'package:kigali_directory_app/screens/settings/setings.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:kigali_directory_app/firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const KigaliApp());
 }
 
@@ -47,7 +50,6 @@ class KigaliApp extends StatelessWidget {
           primary: accentGold,
           secondary: accentGold,
           surface: cardNavy,
-          background: primaryNavy,
         ),
       ),
       home: FirebaseAuth.instance.currentUser != null

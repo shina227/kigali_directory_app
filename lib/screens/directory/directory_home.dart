@@ -2,9 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:kigali_directory_app/main.dart';
 import 'package:kigali_directory_app/screens/directory/directory_description.dart';
 
-class DirectoryScreen extends StatelessWidget {
+class DirectoryScreen extends StatefulWidget {
   const DirectoryScreen({super.key});
 
+  @override
+  State<DirectoryScreen> createState() => _DirectoryScreenState();
+}
+
+class _DirectoryScreenState extends State<DirectoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -38,13 +43,6 @@ class DirectoryScreen extends StatelessWidget {
                             style: TextStyle(color: Colors.white70),
                           ),
                         ],
-                      ),
-                      CircleAvatar(
-                        backgroundColor: KigaliApp.cardNavy,
-                        child: const Icon(
-                          Icons.person,
-                          color: KigaliApp.accentGold,
-                        ),
                       ),
                     ],
                   ),

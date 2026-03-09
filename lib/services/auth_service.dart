@@ -16,15 +16,12 @@ class AuthService {
       User? user = result.user;
 
       if (user != null) {
-        // Email Verification Enforcement
-        await user.sendEmailVerification();
-
         // Create Firestore Document
         await _db.collection('users').doc(user.uid).set({
           'uid': user.uid,
           'fullName': name,
           'email': email,
-          'verified': false,
+          'createdAt': FieldValue.serverTimestamp(),
         });
       }
       return null;
@@ -33,7 +30,7 @@ class AuthService {
     }
   }
 
-  // Login with Verification Check
+  // Login
   Future<String?> login(String email, String password) async {
     try {
       UserCredential result = await _auth.signInWithEmailAndPassword(
@@ -41,10 +38,6 @@ class AuthService {
         password: password,
       );
 
-      if (!result.user!.emailVerified) {
-        await _auth.signOut();
-        return "Please verify your email first.";
-      }
       return null;
     } catch (e) {
       return e.toString();
@@ -53,4 +46,23 @@ class AuthService {
 
   // Logout
   Future<void> logout() async => await _auth.signOut();
+
+  // Forgot Password: Send Reset Email
+  Future<String?> sendPasswordReset(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+      return null; // Success
+    } on FirebaseAuthException catch (e) {
+      switch (e.code) {
+        case 'user-not-found':
+          return "No user found with this email.";
+        case 'invalid-email':
+          return "The email address is not valid.";
+        default:
+          return "An error occurred. Please try again.";
+      }
+    } catch (e) {
+      return e.toString();
+    }
+  }
 }
