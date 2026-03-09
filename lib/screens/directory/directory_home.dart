@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kigali_directory_app/main.dart';
-import 'package:kigali_directory_app/screens/directory/directory_description.dart';
+import 'package:kigali_directory_app/screens/description_screen.dart';
 import 'package:kigali_directory_app/services/directory_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
@@ -18,7 +18,6 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _selectedCategory = "All Places";
 
-  // Category List
   final List<String> _categories = [
     "All Places",
     "Public Services",
@@ -39,13 +38,6 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    // Call the seed function
-    //DirectoryService().seedKigaliData();
-  }
-
-  @override
   void dispose() {
     _searchController.dispose();
     _debounce?.cancel();
@@ -60,13 +52,14 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Header with Search
             Padding(
               padding: const EdgeInsets.all(24.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text("Discover Kigali",
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
+                      style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
                   const Text("Find services and places", style: TextStyle(color: Colors.white70)),
                   const SizedBox(height: 24),
                   TextField(
@@ -86,7 +79,7 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
               ),
             ),
 
-            // Horizontal Category List
+            // Category Selector
             SizedBox(
               height: 40,
               child: ListView.builder(
@@ -99,6 +92,7 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
 
             const SizedBox(height: 16),
 
+            // Dynamic Directory List
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
                 stream: DirectoryService().getPlaces(
@@ -110,7 +104,7 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                     return const Center(child: CircularProgressIndicator(color: KigaliApp.accentGold));
                   }
                   if (snapshot.hasError) {
-                    return const Center(child: Text("Error: Check Firestore Index", style: TextStyle(color: Colors.redAccent)));
+                    return const Center(child: Text("Error fetching data", style: TextStyle(color: Colors.redAccent)));
                   }
                   if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                     return const Center(child: Text("No results found in Kigali", style: TextStyle(color: Colors.white38)));
@@ -119,16 +113,11 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
                   final docs = snapshot.data!.docs;
                   return ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
+                    physics: const BouncingScrollPhysics(),
                     itemCount: docs.length,
                     itemBuilder: (context, index) {
                       final data = docs[index].data() as Map<String, dynamic>;
-                      return _buildDirectoryCard(
-                        context,
-                        title: data['title'] ?? "Unnamed",
-                        category: data['category'] ?? "Other",
-                        location: data['location'] ?? "Kigali",
-                        image: data['image'] ?? "",
-                      );
+                      return _buildDirectoryCard(context, data);
                     },
                   );
                 },
@@ -161,38 +150,74 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
     );
   }
 
-  Widget _buildDirectoryCard(BuildContext context, {required String title, required String category, required String location, required String image}) {
+  Widget _buildDirectoryCard(BuildContext context, Map<String, dynamic> data) {
     return GestureDetector(
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => DescriptionScreen(title: title, category: category, location: location))),
+      onTap: () {
+        // Now correctly passing the full map to the Description Screen
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => DescriptionScreen(placeData: data)),
+        );
+      },
       child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        decoration: BoxDecoration(color: KigaliApp.cardNavy, borderRadius: BorderRadius.circular(16)),
+        margin: const EdgeInsets.only(bottom: 20),
+        decoration: BoxDecoration(
+          color: KigaliApp.cardNavy,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white.withOpacity(0.05)),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Image Preview with Hero-like effect possibility
             Container(
-              height: 150,
+              height: 160,
               width: double.infinity,
-              decoration: const BoxDecoration(borderRadius: BorderRadius.vertical(top: Radius.circular(16)), color: Color(0xFF161E2E)),
-              child: image.isNotEmpty
-                  ? ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                  child: Image.network(image, fit: BoxFit.cover, errorBuilder: (c, e, s) => const Icon(Icons.broken_image, color: Colors.white24)))
-                  : const Icon(Icons.image, color: Colors.white24, size: 40),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                child: data['image'] != null && data['image'].isNotEmpty
+                    ? Image.network(
+                  data['image'],
+                  fit: BoxFit.cover,
+                  errorBuilder: (c, e, s) => const Icon(Icons.broken_image, color: Colors.white24),
+                )
+                    : const Icon(Icons.image, color: Colors.white24, size: 40),
+              ),
             ),
+
+            // Text Content
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-                  const SizedBox(height: 8),
-                  Text(category, style: const TextStyle(color: KigaliApp.accentGold, fontSize: 12, fontWeight: FontWeight.bold)),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          data['title'] ?? "Unnamed Place",
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.white24),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    data['category'] ?? "General",
+                    style: const TextStyle(color: KigaliApp.accentGold, fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 12),
                   Row(children: [
                     const Icon(Icons.location_on, color: Colors.white38, size: 16),
                     const SizedBox(width: 4),
-                    Text(location, style: const TextStyle(color: Colors.white38, fontSize: 13)),
+                    Text(
+                      data['location'] ?? "Kigali",
+                      style: const TextStyle(color: Colors.white38, fontSize: 13),
+                    ),
                   ]),
                 ],
               ),

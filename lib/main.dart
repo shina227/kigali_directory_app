@@ -19,7 +19,7 @@ Future<void> main() async {
 class KigaliApp extends StatelessWidget {
   const KigaliApp({super.key});
 
-  // Colors
+  // Global Brand Colors
   static const Color primaryNavy = Color(0xFF0F172A);
   static const Color accentGold = Color(0xFFEAB308);
   static const Color cardNavy = Color(0xFF1E293B);
@@ -28,16 +28,31 @@ class KigaliApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      title: 'Kigali Directory',
       theme: ThemeData(
+        useMaterial3: true,
         brightness: Brightness.dark,
         primaryColor: accentGold,
         scaffoldBackgroundColor: primaryNavy,
 
-        // Button styles
+        // Consistent AppBar Theme
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          centerTitle: false,
+          titleTextStyle: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+
+        // Global Button Styles
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             backgroundColor: accentGold,
             foregroundColor: primaryNavy,
+            minimumSize: const Size(double.infinity, 54),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
@@ -45,21 +60,30 @@ class KigaliApp extends StatelessWidget {
           ),
         ),
 
-        // ColorScheme
+        // ColorScheme for UI Components
         colorScheme: const ColorScheme.dark(
           primary: accentGold,
           secondary: accentGold,
           surface: cardNavy,
         ),
       ),
-      home: FirebaseAuth.instance.currentUser != null
-          ? const MainNavigation()
-          : const LoginScreen(),
+      // Auto-navigation based on Auth state
+      home: StreamBuilder<User?>(
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          }
+          if (snapshot.hasData) {
+            return const MainNavigation();
+          }
+          return const LoginScreen();
+        },
+      ),
     );
   }
 }
 
-// Bottom Navigation Bar
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
 
@@ -84,11 +108,14 @@ class _MainNavigationState extends State<MainNavigation> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      body: _pages[_selectedIndex],
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _pages,
+      ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           border: Border(
-            top: BorderSide(color: Colors.white.withOpacity(0.1), width: 0.5),
+            top: BorderSide(color: Colors.white.withOpacity(0.05), width: 1),
           ),
         ),
         child: BottomNavigationBar(
@@ -97,30 +124,30 @@ class _MainNavigationState extends State<MainNavigation> {
           onTap: _onItemTapped,
           backgroundColor: KigaliApp.primaryNavy,
           selectedItemColor: theme.colorScheme.primary,
-          unselectedItemColor: Colors.white.withOpacity(0.5),
+          unselectedItemColor: Colors.white.withOpacity(0.4),
           showUnselectedLabels: true,
-          selectedFontSize: 11,
-          unselectedFontSize: 11,
+          selectedFontSize: 12,
+          unselectedFontSize: 12,
           items: const [
             BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              activeIcon: Icon(Icons.home_filled),
+              icon: Icon(Icons.grid_view_outlined),
+              activeIcon: Icon(Icons.grid_view_rounded),
               label: 'Directory',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.description_outlined),
-              activeIcon: Icon(Icons.description),
+              icon: Icon(Icons.list_alt_outlined),
+              activeIcon: Icon(Icons.list_alt_rounded),
               label: 'My Listings',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.map_outlined),
-              activeIcon: Icon(Icons.map),
+              activeIcon: Icon(Icons.map_rounded),
               label: 'Map',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.settings_outlined),
-              activeIcon: Icon(Icons.settings),
-              label: 'Settings',
+              icon: Icon(Icons.person_outline),
+              activeIcon: Icon(Icons.person),
+              label: 'Profile',
             ),
           ],
         ),
