@@ -10,15 +10,13 @@ class ListingService {
   Future<void> addListing(Map<String, dynamic> data) async {
     try {
       final User? user = _auth.currentUser;
-
       await _db.collection(collection).add({
         ...data,
-        'userId': user?.uid, // Dynamically tag the listing with the creator's ID
-        'status': data['status'] ?? 'pending',
+        'userId': user?.uid,
+        'status': 'pending',
         'createdAt': FieldValue.serverTimestamp(),
       });
     } catch (e) {
-      // Re-throwing allows the UI to catch the error and show a SnackBar
       throw Exception("Failed to add listing: $e");
     }
   }

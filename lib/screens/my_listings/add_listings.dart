@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Added for User ID
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:kigali_directory_app/main.dart';
 import 'package:kigali_directory_app/services/listing_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:geocoding/geocoding.dart';
 
 class AddListingScreen extends StatefulWidget {
   const AddListingScreen({super.key});
@@ -38,9 +39,8 @@ class _AddListingScreenState extends State<AddListingScreen> {
     super.dispose();
   }
 
-  // 2. Submit Logic
   Future<void> _handleSubmit() async {
-    // Basic Validation
+    // 1. Basic Validation
     if (_nameController.text.isEmpty ||
         _selectedCategory == null ||
         _addressController.text.isEmpty) {
@@ -54,28 +54,46 @@ class _AddListingScreenState extends State<AddListingScreen> {
       return;
     }
 
-    // Modern UX: Hide keyboard on submit
     FocusScope.of(context).unfocus();
-
     setState(() => _isLoading = true);
 
-    // Get current user for ownership
-    final user = FirebaseAuth.instance.currentUser;
-
-    // Data Preparation
-    final newPlace = {
-      "userId": user?.uid, // Essential for "My Listings" filtering
-      "title": _nameController.text.trim(),
-      "category": _selectedCategory,
-      "location": _addressController.text.trim(),
-      "description": _descriptionController.text.trim(),
-      "phone": _phoneController.text.trim(),
-      "image": "https://images.unsplash.com/photo-1509042239860-f550ce710b93",
-      "status": "pending",
-      "createdAt": FieldValue.serverTimestamp(),
-    };
+    // Default coordinates for Kigali
+    double lat = -1.9441;
+    double lng = 30.0619;
 
     try {
+      // 2. Attempt Geocoding
+      try {
+        List<Location> locations = await locationFromAddress(
+            "${_addressController.text}, Kigali, Rwanda"
+        );
+        if (locations.isNotEmpty) {
+          lat = locations.first.latitude;
+          lng = locations.first.longitude;
+        }
+      } catch (geoError) {
+        debugPrint("Geocoding failed, using defaults: $geoError");
+        // We continue with defaults so the user isn't blocked
+      }
+
+      final user = FirebaseAuth.instance.currentUser;
+
+      // 3. Prepare Data
+      final newPlace = {
+        "userId": user?.uid,
+        "title": _nameController.text.trim(),
+        "category": _selectedCategory,
+        "location": _addressController.text.trim(),
+        "lat": lat,
+        "lng": lng,
+        "description": _descriptionController.text.trim(),
+        "phone": _phoneController.text.trim(),
+        "image": "https://images.unsplash.com/photo-1509042239860-f550ce710b93",
+        "status": "pending",
+        "createdAt": FieldValue.serverTimestamp(),
+      };
+
+      // 4. Single Service Call
       await ListingService().addListing(newPlace);
 
       if (mounted) {
@@ -106,6 +124,7 @@ class _AddListingScreenState extends State<AddListingScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("Error: ${e.toString()}"),
+            backgroundColor: Colors.redAccent,
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -119,10 +138,8 @@ class _AddListingScreenState extends State<AddListingScreen> {
       backgroundColor: KigaliApp.primaryNavy,
       appBar: AppBar(
         title: const Text("Create New Listing"),
-        // AppBar style is now handled globally in main.dart
       ),
       body: SingleChildScrollView(
-        // Helps avoid issues with the keyboard on smaller devices
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         child: Column(
@@ -184,6 +201,8 @@ class _AddListingScreenState extends State<AddListingScreen> {
       ),
     );
   }
+
+  // --- UI Helpers ---
 
   Widget _buildFieldLabel(String label) {
     return Padding(
