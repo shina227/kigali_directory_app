@@ -30,17 +30,13 @@ class _LoginScreenState extends State<LoginScreen> {
         _passwordController.text.trim(),
       );
 
+      if (!mounted) return;
+
       setState(() => _isLoading = false);
 
       if (error == null) {
-        if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const MainNavigation()),
-        );
+        // No need to navigate manually — StreamBuilder in main.dart handles it
       } else {
-        // FAILURE: Show the specific error (e.g., "Wrong password" or "User not found")
-        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(error), backgroundColor: Colors.redAccent),
         );

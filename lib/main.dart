@@ -3,10 +3,13 @@ import 'package:kigali_directory_app/screens/auth/login.dart';
 import 'package:kigali_directory_app/screens/directory/directory_home.dart';
 import 'package:kigali_directory_app/screens/map_view/map.dart';
 import 'package:kigali_directory_app/screens/my_listings/my_listings.dart';
-import 'package:kigali_directory_app/screens/settings/setings.dart';
+import 'package:kigali_directory_app/screens/settings/settings.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:kigali_directory_app/firebase_options.dart';
+import 'package:provider/provider.dart';
+import 'package:kigali_directory_app/state/listing_provider.dart';
+import 'package:kigali_directory_app/state/auth_provider.dart' as app_auth;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,66 +22,65 @@ Future<void> main() async {
 class KigaliApp extends StatelessWidget {
   const KigaliApp({super.key});
 
-  // Global Brand Colors
   static const Color primaryNavy = Color(0xFF0F172A);
   static const Color accentGold = Color(0xFFEAB308);
   static const Color cardNavy = Color(0xFF1E293B);
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Kigali Directory',
-      theme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.dark,
-        primaryColor: accentGold,
-        scaffoldBackgroundColor: primaryNavy,
-
-        // Consistent AppBar Theme
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          centerTitle: false,
-          titleTextStyle: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-
-        // Global Button Styles
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: accentGold,
-            foregroundColor: primaryNavy,
-            minimumSize: const Size(double.infinity, 54),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => app_auth.AuthProvider()),
+        ChangeNotifierProvider(create: (_) => ListingProvider()),
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Kigali Directory',
+        theme: ThemeData(
+          useMaterial3: true,
+          brightness: Brightness.dark,
+          primaryColor: accentGold,
+          scaffoldBackgroundColor: primaryNavy,
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Colors.transparent,
             elevation: 0,
+            centerTitle: false,
+            titleTextStyle: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          elevatedButtonTheme: ElevatedButtonThemeData(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: accentGold,
+              foregroundColor: primaryNavy,
+              minimumSize: const Size(double.infinity, 54),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 0,
+            ),
+          ),
+          colorScheme: const ColorScheme.dark(
+            primary: accentGold,
+            secondary: accentGold,
+            surface: cardNavy,
           ),
         ),
-
-        // ColorScheme for UI Components
-        colorScheme: const ColorScheme.dark(
-          primary: accentGold,
-          secondary: accentGold,
-          surface: cardNavy,
+        home: StreamBuilder<User?>(
+          stream: FirebaseAuth.instance.authStateChanges(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Scaffold(
+                  body: Center(child: CircularProgressIndicator()));
+            }
+            if (snapshot.hasData) {
+              return const MainNavigation();
+            }
+            return const LoginScreen();
+          },
         ),
-      ),
-      // Auto-navigation based on Auth state
-      home: StreamBuilder<User?>(
-        stream: FirebaseAuth.instance.authStateChanges(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Scaffold(body: Center(child: CircularProgressIndicator()));
-          }
-          if (snapshot.hasData) {
-            return const MainNavigation();
-          }
-          return const LoginScreen();
-        },
       ),
     );
   }
@@ -106,7 +108,6 @@ class _MainNavigationState extends State<MainNavigation> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
     return Scaffold(
       body: IndexedStack(
         index: _selectedIndex,

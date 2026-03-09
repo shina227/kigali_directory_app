@@ -6,22 +6,19 @@ class ListingService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final String collection = 'places';
 
-  // --- Create ---
   Future<void> addListing(Map<String, dynamic> data) async {
     try {
       final User? user = _auth.currentUser;
       await _db.collection(collection).add({
         ...data,
-        'userId': user?.uid,
-        'status': 'pending',
-        'createdAt': FieldValue.serverTimestamp(),
+        'createdBy': user?.uid,
+        'timestamp': FieldValue.serverTimestamp(),
       });
     } catch (e) {
       throw Exception("Failed to add listing: $e");
     }
   }
 
-  // --- Update ---
   Future<void> updateListing(String docId, Map<String, dynamic> newData) async {
     try {
       await _db.collection(collection).doc(docId).update({
@@ -33,7 +30,6 @@ class ListingService {
     }
   }
 
-  // --- Delete ---
   Future<void> deleteListing(String docId) async {
     try {
       await _db.collection(collection).doc(docId).delete();
@@ -42,14 +38,12 @@ class ListingService {
     }
   }
 
-  // --- Read (Optional Helper) ---
-  // Returns a stream of listings specific to the logged-in user
   Stream<QuerySnapshot> getMyListings() {
     final User? user = _auth.currentUser;
     return _db
         .collection(collection)
-        .where('userId', isEqualTo: user?.uid)
-        .orderBy('createdAt', descending: true)
+        .where('createdBy', isEqualTo: user?.uid)
+        .orderBy('timestamp', descending: true)
         .snapshots();
   }
 }

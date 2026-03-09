@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kigali_directory_app/main.dart';
+import 'package:kigali_directory_app/screens/auth/email_verification.dart';
 import 'package:kigali_directory_app/services/auth_service.dart';
 import 'package:kigali_directory_app/utils/validators.dart';
 
@@ -38,10 +39,15 @@ class _SignupScreenState extends State<SignupScreen> {
 
       if (error == null) {
         if (!mounted) return;
-
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const MainNavigation()),
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const EmailVerificationScreen()),
               (route) => false,
+        );
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error), backgroundColor: Colors.redAccent),
         );
       }
     }

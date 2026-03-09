@@ -1,9 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:provider/provider.dart';
 import 'package:kigali_directory_app/main.dart';
-import 'package:kigali_directory_app/services/listing_service.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:geocoding/geocoding.dart';
+import 'package:kigali_directory_app/state/listing_provider.dart';
 
 class AddListingScreen extends StatefulWidget {
   const AddListingScreen({super.key});
@@ -14,33 +15,52 @@ class AddListingScreen extends StatefulWidget {
 
 class _AddListingScreenState extends State<AddListingScreen> {
   final _nameController = TextEditingController();
-  final _phoneController = TextEditingController();
+  final _contactController = TextEditingController();
   final _addressController = TextEditingController();
   final _descriptionController = TextEditingController();
 
   String? _selectedCategory;
+  File? _selectedImage;
+  bool _isLoading = false;
+
   final List<String> _categories = [
     "Public Services",
     "Cafés & Dining",
     "Hospitals",
     "Banks",
     "Pharmacies",
-    "Schools"
+    "Schools",
   ];
-
-  bool _isLoading = false;
 
   @override
   void dispose() {
     _nameController.dispose();
-    _phoneController.dispose();
+    _contactController.dispose();
     _addressController.dispose();
     _descriptionController.dispose();
     super.dispose();
   }
 
+  Future<void> _pickImage() async {
+    final XFile? picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 70,
+    );
+    if (picked != null) {
+      setState(() => _selectedImage = File(picked.path));
+    }
+  }
+
+  Future<String> _uploadImage(File image) async {
+    final ref = FirebaseStorage.instance
+        .ref()
+        .child('listing_images')
+        .child('${DateTime.now().millisecondsSinceEpoch}.jpg');
+    await ref.putFile(image);
+    return await ref.getDownloadURL();
+  }
+
   Future<void> _handleSubmit() async {
-    // 1. Basic Validation
     if (_nameController.text.isEmpty ||
         _selectedCategory == null ||
         _addressController.text.isEmpty) {
@@ -57,65 +77,46 @@ class _AddListingScreenState extends State<AddListingScreen> {
     FocusScope.of(context).unfocus();
     setState(() => _isLoading = true);
 
-    // Default coordinates for Kigali
-    double lat = -1.9441;
-    double lng = 30.0619;
-
     try {
-      // 2. Attempt Geocoding
-      try {
-        List<Location> locations = await locationFromAddress(
-            "${_addressController.text}, Kigali, Rwanda"
-        );
-        if (locations.isNotEmpty) {
-          lat = locations.first.latitude;
-          lng = locations.first.longitude;
-        }
-      } catch (geoError) {
-        debugPrint("Geocoding failed, using defaults: $geoError");
-        // We continue with defaults so the user isn't blocked
+      String imageUrl = "";
+      if (_selectedImage != null) {
+        imageUrl = await _uploadImage(_selectedImage!);
       }
 
-      final user = FirebaseAuth.instance.currentUser;
-
-      // 3. Prepare Data
       final newPlace = {
-        "userId": user?.uid,
         "title": _nameController.text.trim(),
         "category": _selectedCategory,
         "location": _addressController.text.trim(),
-        "lat": lat,
-        "lng": lng,
+        "contact": _contactController.text.trim(),
         "description": _descriptionController.text.trim(),
-        "phone": _phoneController.text.trim(),
-        "image": "https://images.unsplash.com/photo-1509042239860-f550ce710b93",
-        "status": "pending",
-        "createdAt": FieldValue.serverTimestamp(),
+        "latitude": -1.9441,
+        "longitude": 30.0619,
+        "image": imageUrl,
+        "status": "active",
       };
 
-      // 4. Single Service Call
-      await ListingService().addListing(newPlace);
+      // Use provider instead of direct service call
+      await context.read<ListingProvider>().addListing(newPlace);
 
       if (mounted) {
         setState(() => _isLoading = false);
-
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: Colors.green.shade800,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10)),
             content: Row(
               children: [
                 const Icon(Icons.check_circle, color: Colors.white),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text("${_nameController.text} submitted for review!"),
-                ),
+                    child: Text(
+                        "${_nameController.text} added successfully!")),
               ],
             ),
           ),
         );
-
         Navigator.pop(context);
       }
     } catch (e) {
@@ -123,10 +124,8 @@ class _AddListingScreenState extends State<AddListingScreen> {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Error: ${e.toString()}"),
-            backgroundColor: Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-          ),
+              content: Text("Error: $e"),
+              backgroundColor: Colors.redAccent),
         );
       }
     }
@@ -136,35 +135,34 @@ class _AddListingScreenState extends State<AddListingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: KigaliApp.primaryNavy,
-      appBar: AppBar(
-        title: const Text("Create New Listing"),
-      ),
+      appBar: AppBar(title: const Text("Create New Listing")),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildFieldLabel("Business or Place Name *"),
+            _buildFieldLabel("Place or Service Name *"),
             _buildTextField(_nameController, "e.g. Kigali Heights Cafe"),
 
             _buildFieldLabel("Category *"),
             _buildDropdown(),
 
-            _buildFieldLabel("Contact Phone Number"),
-            _buildTextField(_phoneController, "+250 788 000 000",
+            _buildFieldLabel("Contact Number"),
+            _buildTextField(_contactController, "+250 788 000 000",
                 icon: Icons.phone_outlined),
 
-            _buildFieldLabel("Address / Location *"),
+            _buildFieldLabel("Address *"),
             _buildTextField(_addressController, "Enter physical address",
                 icon: Icons.location_on),
 
             _buildFieldLabel("Description"),
-            _buildTextField(_descriptionController,
+            _buildTextField(
+                _descriptionController,
                 "Describe the services or highlights...",
                 maxLines: 4),
 
-            _buildFieldLabel("Upload Photos"),
+            _buildFieldLabel("Photo"),
             _buildUploadBox(),
 
             const SizedBox(height: 40),
@@ -179,20 +177,11 @@ class _AddListingScreenState extends State<AddListingScreen> {
                   height: 24,
                   width: 24,
                   child: CircularProgressIndicator(
-                    color: KigaliApp.primaryNavy,
-                    strokeWidth: 2,
-                  ),
+                      color: KigaliApp.primaryNavy, strokeWidth: 2),
                 )
                     : const Text("Submit Listing",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              ),
-            ),
-
-            const SizedBox(height: 20),
-            const Center(
-              child: Text(
-                "By submitting, you agree to the Terms of Use.",
-                style: TextStyle(color: Colors.white38, fontSize: 11),
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 16)),
               ),
             ),
             const SizedBox(height: 40),
@@ -202,14 +191,84 @@ class _AddListingScreenState extends State<AddListingScreen> {
     );
   }
 
-  // --- UI Helpers ---
+  Widget _buildUploadBox() {
+    return GestureDetector(
+      onTap: _isLoading ? null : _pickImage,
+      child: Container(
+        width: double.infinity,
+        height: 180,
+        decoration: BoxDecoration(
+          color: KigaliApp.cardNavy,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: _selectedImage != null
+                ? KigaliApp.accentGold
+                : Colors.white10,
+          ),
+        ),
+        child: _selectedImage != null
+            ? Stack(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.file(
+                _selectedImage!,
+                width: double.infinity,
+                height: double.infinity,
+                fit: BoxFit.cover,
+              ),
+            ),
+            Positioned(
+              bottom: 10,
+              right: 10,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.edit, color: Colors.white, size: 14),
+                    SizedBox(width: 4),
+                    Text("Change",
+                        style: TextStyle(
+                            color: Colors.white, fontSize: 12)),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        )
+            : Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.add_a_photo_outlined,
+                color: Colors.orangeAccent.withOpacity(0.5),
+                size: 40),
+            const SizedBox(height: 12),
+            const Text("Tap to upload a photo",
+                style:
+                TextStyle(color: Colors.white70, fontSize: 13)),
+            const Text("PNG, JPG up to 10MB",
+                style:
+                TextStyle(color: Colors.white24, fontSize: 11)),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _buildFieldLabel(String label) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8, top: 20),
       child: Text(label,
           style: const TextStyle(
-              color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+              fontSize: 14)),
     );
   }
 
@@ -238,50 +297,24 @@ class _AddListingScreenState extends State<AddListingScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-          color: KigaliApp.cardNavy, borderRadius: BorderRadius.circular(12)),
+          color: KigaliApp.cardNavy,
+          borderRadius: BorderRadius.circular(12)),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: _selectedCategory,
           hint: const Text("Select category",
               style: TextStyle(color: Colors.white24, fontSize: 14)),
           dropdownColor: KigaliApp.cardNavy,
-          icon: const Icon(Icons.keyboard_arrow_down, color: Colors.white38),
+          icon: const Icon(Icons.keyboard_arrow_down,
+              color: Colors.white38),
           isExpanded: true,
           items: _categories
               .map((cat) => DropdownMenuItem(
               value: cat,
-              child: Text(cat, style: const TextStyle(color: Colors.white))))
+              child: Text(cat,
+                  style: const TextStyle(color: Colors.white))))
               .toList(),
           onChanged: (val) => setState(() => _selectedCategory = val),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildUploadBox() {
-    return InkWell(
-      onTap: () {
-        // Future: Integration with image_picker
-      },
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(32),
-        decoration: BoxDecoration(
-          color: KigaliApp.cardNavy,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white10, style: BorderStyle.solid),
-        ),
-        child: Column(
-          children: [
-            Icon(Icons.add_a_photo_outlined,
-                color: Colors.orangeAccent.withOpacity(0.5), size: 40),
-            const SizedBox(height: 12),
-            const Text("Click to upload photos",
-                style: TextStyle(color: Colors.white70, fontSize: 13)),
-            const Text("PNG, JPG up to 10MB",
-                style: TextStyle(color: Colors.white24, fontSize: 11)),
-          ],
         ),
       ),
     );

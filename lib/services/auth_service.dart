@@ -16,13 +16,20 @@ class AuthService {
       User? user = result.user;
 
       if (user != null) {
-        // Create Firestore Document
+        // Send verification email
+        await user.sendEmailVerification();
+
+        // Create Firestore profile
         await _db.collection('users').doc(user.uid).set({
           'uid': user.uid,
           'fullName': name,
           'email': email,
           'createdAt': FieldValue.serverTimestamp(),
         });
+
+        await user.updateDisplayName(name);
+        // Sign out immediately — force them to verify first
+        await _auth.signOut();
       }
       return null;
     } catch (e) {
@@ -30,7 +37,7 @@ class AuthService {
     }
   }
 
-  // Login
+  // Login — enforces email verification
   Future<String?> login(String email, String password) async {
     try {
       UserCredential result = await _auth.signInWithEmailAndPassword(
@@ -38,7 +45,28 @@ class AuthService {
         password: password,
       );
 
+      User? user = result.user;
+
+      // Block unverified users
+      if (user != null && !user.emailVerified) {
+        await _auth.signOut();
+        return "Please verify your email before logging in. Check your inbox.";
+      }
+
       return null;
+    } on FirebaseAuthException catch (e) {
+      switch (e.code) {
+        case 'user-not-found':
+          return "No account found with this email.";
+        case 'wrong-password':
+          return "Incorrect password.";
+        case 'invalid-credential':
+          return "Invalid email or password.";
+        case 'too-many-requests':
+          return "Too many attempts. Try again later.";
+        default:
+          return "Login failed. Please try again.";
+      }
     } catch (e) {
       return e.toString();
     }
@@ -47,11 +75,11 @@ class AuthService {
   // Logout
   Future<void> logout() async => await _auth.signOut();
 
-  // Forgot Password: Send Reset Email
+  // Forgot Password
   Future<String?> sendPasswordReset(String email) async {
     try {
       await _auth.sendPasswordResetEmail(email: email);
-      return null; // Success
+      return null;
     } on FirebaseAuthException catch (e) {
       switch (e.code) {
         case 'user-not-found':
