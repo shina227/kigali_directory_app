@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:kigali_directory_app/main.dart';
 import 'package:kigali_directory_app/screens/directory/directory_description.dart';
+import 'package:kigali_directory_app/services/directory_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
 
 class DirectoryScreen extends StatefulWidget {
   const DirectoryScreen({super.key});
@@ -10,6 +13,45 @@ class DirectoryScreen extends StatefulWidget {
 }
 
 class _DirectoryScreenState extends State<DirectoryScreen> {
+  Timer? _debounce;
+  String _searchQuery = "";
+  final TextEditingController _searchController = TextEditingController();
+  String _selectedCategory = "All Places";
+
+  // Category List
+  final List<String> _categories = [
+    "All Places",
+    "Public Services",
+    "Cafés & Dining",
+    "Hospitals",
+    "Banks",
+    "Pharmacies",
+    "Schools"
+  ];
+
+  void _onSearchChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      setState(() {
+        _searchQuery = query;
+      });
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Call the seed function
+    //DirectoryService().seedKigaliData();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -18,104 +60,78 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header Section
             Padding(
               padding: const EdgeInsets.all(24.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Discover Kigali",
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          Text(
-                            "Find services and places",
-                            style: TextStyle(color: Colors.white70),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                  const Text("Discover Kigali",
+                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
+                  const Text("Find services and places", style: TextStyle(color: Colors.white70)),
                   const SizedBox(height: 24),
-
-                  // Search Bar
                   TextField(
+                    controller: _searchController,
+                    onChanged: _onSearchChanged,
                     style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
-                      hintText: "Search services, clinics, cafes...",
+                      hintText: "Search services...",
                       hintStyle: const TextStyle(color: Colors.white38),
-                      prefixIcon: const Icon(
-                        Icons.search,
-                        color: Colors.white38,
-                      ),
+                      prefixIcon: const Icon(Icons.search, color: Colors.white38),
                       filled: true,
                       fillColor: KigaliApp.cardNavy,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                     ),
                   ),
                 ],
               ),
             ),
 
-            // Categories Row
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Row(
-                children: [
-                  _buildCategoryChip("All Places", isActive: true),
-                  _buildCategoryChip("Public Services"),
-                  _buildCategoryChip("Cafés & Dining"),
-                  _buildCategoryChip("Hospitals"),
-                ],
+            // Horizontal Category List
+            SizedBox(
+              height: 40,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                itemCount: _categories.length,
+                itemBuilder: (context, index) => _buildCategoryChip(_categories[index]),
               ),
             ),
 
             const SizedBox(height: 16),
 
-            // Directory List
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                children: [
-                  _buildDirectoryCard(
-                    context,
-                    title: "Kigali Public Library",
-                    category: "Public Service",
-                    location: "KG 8 Ave, Kacyiru",
-                    image:
-                        "https://images.unsplash.com/photo-1521587760476-6c12a4b040da",
-                  ),
-                  _buildDirectoryCard(
-                    context,
-                    title: "Question Coffee",
-                    category: "Café & Dining",
-                    location: "KG 8 Ave, Gishushu",
-                    image:
-                        "https://images.unsplash.com/photo-1554118811-1e0d58224f24",
-                  ),
-                  _buildDirectoryCard(
-                    context,
-                    title: "Nyandungu Urban Wetland",
-                    category: "Park",
-                    location: "Kigali-Muhanga Rd, Kigali",
-                    image:
-                        "https://images.unsplash.com/photo-1554118811-1e0d58224f24",
-                  ),
-                ],
+              child: StreamBuilder<QuerySnapshot>(
+                stream: DirectoryService().getPlaces(
+                  query: _searchQuery,
+                  category: _selectedCategory,
+                ),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator(color: KigaliApp.accentGold));
+                  }
+                  if (snapshot.hasError) {
+                    return const Center(child: Text("Error: Check Firestore Index", style: TextStyle(color: Colors.redAccent)));
+                  }
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return const Center(child: Text("No results found in Kigali", style: TextStyle(color: Colors.white38)));
+                  }
+
+                  final docs = snapshot.data!.docs;
+                  return ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    itemCount: docs.length,
+                    itemBuilder: (context, index) {
+                      final data = docs[index].data() as Map<String, dynamic>;
+                      return _buildDirectoryCard(
+                        context,
+                        title: data['title'] ?? "Unnamed",
+                        category: data['category'] ?? "Other",
+                        location: data['location'] ?? "Kigali",
+                        image: data['image'] ?? "",
+                      );
+                    },
+                  );
+                },
               ),
             ),
           ],
@@ -124,118 +140,60 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
     );
   }
 
-  // Reusable Category Chip
-  Widget _buildCategoryChip(String label, {bool isActive = false}) {
-    return Container(
-      margin: const EdgeInsets.only(right: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: isActive ? KigaliApp.accentGold : KigaliApp.cardNavy,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: isActive ? KigaliApp.primaryNavy : Colors.white,
-          fontWeight: FontWeight.bold,
+  Widget _buildCategoryChip(String label) {
+    final bool isActive = _selectedCategory == label;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedCategory = label),
+      child: Container(
+        margin: const EdgeInsets.only(right: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: isActive ? KigaliApp.accentGold : KigaliApp.cardNavy,
+          borderRadius: BorderRadius.circular(20),
         ),
+        alignment: Alignment.center,
+        child: Text(label,
+            style: TextStyle(
+                color: isActive ? KigaliApp.primaryNavy : Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 13)),
       ),
     );
   }
 
-  // Reusable Directory Card
-  Widget _buildDirectoryCard(
-    BuildContext context, {
-    required String title,
-    required String category,
-    required String location,
-    required String image,
-  }) {
+  Widget _buildDirectoryCard(BuildContext context, {required String title, required String category, required String location, required String image}) {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => DescriptionScreen(
-              title: title,
-              category: category,
-              location: location,
-            ),
-          ),
-        );
-      },
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => DescriptionScreen(title: title, category: category, location: location))),
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
-        decoration: BoxDecoration(
-          color: KigaliApp.cardNavy,
-          borderRadius: BorderRadius.circular(16),
-        ),
+        decoration: BoxDecoration(color: KigaliApp.cardNavy, borderRadius: BorderRadius.circular(16)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Card Image
             Container(
               height: 150,
-              decoration: BoxDecoration(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(16),
-                ),
-                color: Colors.grey.shade800,
-              ),
-              child: const Center(
-                child: Icon(Icons.image, color: Colors.white24, size: 40),
-              ),
+              width: double.infinity,
+              decoration: const BoxDecoration(borderRadius: BorderRadius.vertical(top: Radius.circular(16)), color: Color(0xFF161E2E)),
+              child: image.isNotEmpty
+                  ? ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                  child: Image.network(image, fit: BoxFit.cover, errorBuilder: (c, e, s) => const Icon(Icons.broken_image, color: Colors.white24)))
+                  : const Icon(Icons.image, color: Colors.white24, size: 40),
             ),
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
+                  Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
                   const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: KigaliApp.accentGold.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      category,
-                      style: const TextStyle(
-                        color: KigaliApp.accentGold,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+                  Text(category, style: const TextStyle(color: KigaliApp.accentGold, fontSize: 12, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.location_on,
-                        color: Colors.white38,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        location,
-                        style: const TextStyle(
-                          color: Colors.white38,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
+                  Row(children: [
+                    const Icon(Icons.location_on, color: Colors.white38, size: 16),
+                    const SizedBox(width: 4),
+                    Text(location, style: const TextStyle(color: Colors.white38, fontSize: 13)),
+                  ]),
                 ],
               ),
             ),
