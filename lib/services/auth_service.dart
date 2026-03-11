@@ -28,7 +28,7 @@ class AuthService {
         });
 
         await user.updateDisplayName(name);
-        // Sign out immediately — force them to verify first
+        // Sign out immediately - force them to verify first
         await _auth.signOut();
       }
       return null;
@@ -37,7 +37,7 @@ class AuthService {
     }
   }
 
-  // Login — enforces email verification
+  // Login - enforces email verification
   Future<String?> login(String email, String password) async {
     try {
       UserCredential result = await _auth.signInWithEmailAndPassword(

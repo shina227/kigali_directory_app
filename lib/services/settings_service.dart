@@ -14,13 +14,10 @@ class SettingsService {
     if (user == null) return;
 
     try {
-      await _db.collection(_collection).doc(user.uid).set(
-        {
-          ...settingsData,
-          "lastUpdated": FieldValue.serverTimestamp(),
-        },
-        SetOptions(merge: true), // Use merge to avoid overwriting existing fields
-      );
+      await _db.collection(_collection).doc(user.uid).set({
+        ...settingsData,
+        "lastUpdated": FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
     } catch (e) {
       throw Exception("Failed to update settings: $e");
     }

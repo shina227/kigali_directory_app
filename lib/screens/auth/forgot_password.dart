@@ -19,8 +19,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
 
-      // We'll assume your AuthService has a sendPasswordReset method
-      final error = await AuthService().sendPasswordReset(_emailController.text.trim());
+      final error = await AuthService().sendPasswordReset(
+        _emailController.text.trim(),
+      );
 
       setState(() => _isLoading = false);
 
@@ -47,7 +48,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: Colors.white,
+            size: 20,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -62,7 +67,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 const SizedBox(height: 20),
                 const Text(
                   "Reset Password",
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 const Text(
@@ -81,8 +90,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _resetPassword,
                     child: _isLoading
-                        ? const CircularProgressIndicator(color: KigaliApp.primaryNavy)
-                        : const Text("Send Reset Link", style: TextStyle(fontWeight: FontWeight.bold)),
+                        ? const CircularProgressIndicator(
+                            color: KigaliApp.primaryNavy,
+                          )
+                        : const Text(
+                            "Send Reset Link",
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
                   ),
                 ),
               ],
@@ -97,7 +111,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("Email Address", style: TextStyle(fontWeight: FontWeight.w600, color: Colors.white)),
+        const Text(
+          "Email Address",
+          style: TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
+        ),
         const SizedBox(height: 8),
         TextFormField(
           controller: _emailController,
@@ -109,7 +126,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             prefixIcon: const Icon(Icons.email_outlined, color: Colors.white38),
             filled: true,
             fillColor: KigaliApp.cardNavy,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
           ),
         ),
       ],

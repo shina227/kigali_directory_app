@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:kigali_directory_app/services/listing_service.dart';
 import 'package:kigali_directory_app/services/directory_service.dart';
 
@@ -24,39 +23,46 @@ class ListingProvider extends ChangeNotifier {
     _setLoading(true);
     _directoryService
         .getPlaces(category: category)
-        .listen((snapshot) {
-      _allListings = snapshot.docs
-          .map((doc) => {
-        ...doc.data() as Map<String, dynamic>,
-        'docId': doc.id,
-      })
-          .toList();
-      _setLoading(false);
-      notifyListeners();
-    }, onError: (e) {
-      _error = e.toString();
-      _setLoading(false);
-      notifyListeners();
-    });
+        .listen(
+          (snapshot) {
+            _allListings = snapshot.docs
+                .map(
+                  (doc) => {
+                    ...doc.data() as Map<String, dynamic>,
+                    'docId': doc.id,
+                  },
+                )
+                .toList();
+            _setLoading(false);
+            notifyListeners();
+          },
+          onError: (e) {
+            _error = e.toString();
+            _setLoading(false);
+            notifyListeners();
+          },
+        );
   }
 
   // Listen to current user's listings (My Listings screen)
   void listenToMyListings() {
     _setLoading(true);
-    _listingService.getMyListings().listen((snapshot) {
-      _myListings = snapshot.docs
-          .map((doc) => {
-        ...doc.data() as Map<String, dynamic>,
-        'docId': doc.id,
-      })
-          .toList();
-      _setLoading(false);
-      notifyListeners();
-    }, onError: (e) {
-      _error = e.toString();
-      _setLoading(false);
-      notifyListeners();
-    });
+    _listingService.getMyListings().listen(
+      (snapshot) {
+        _myListings = snapshot.docs
+            .map(
+              (doc) => {...doc.data() as Map<String, dynamic>, 'docId': doc.id},
+            )
+            .toList();
+        _setLoading(false);
+        notifyListeners();
+      },
+      onError: (e) {
+        _error = e.toString();
+        _setLoading(false);
+        notifyListeners();
+      },
+    );
   }
 
   // Create
@@ -72,8 +78,7 @@ class ListingProvider extends ChangeNotifier {
   }
 
   // Update
-  Future<void> updateListing(
-      String docId, Map<String, dynamic> data) async {
+  Future<void> updateListing(String docId, Map<String, dynamic> data) async {
     _setLoading(true);
     try {
       await _listingService.updateListing(docId, data);

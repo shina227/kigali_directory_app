@@ -6,7 +6,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:kigali_directory_app/main.dart';
 import 'package:kigali_directory_app/services/auth_service.dart';
 import 'package:kigali_directory_app/services/settings_service.dart';
-import 'package:kigali_directory_app/screens/auth/login.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -32,14 +31,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.initState();
     _nameController = TextEditingController(text: user?.displayName);
     _emailController = TextEditingController(text: user?.email);
-    _phoneController = TextEditingController(); // Initialize immediately to avoid LateInitializationError
+    _phoneController = TextEditingController();
 
     // Fetch extra fields from Firestore once
-    FirebaseFirestore.instance
-        .collection('users')
-        .doc(user?.uid)
-        .get()
-        .then((doc) {
+    FirebaseFirestore.instance.collection('users').doc(user?.uid).get().then((
+      doc,
+    ) {
       if (doc.exists && mounted) {
         setState(() {
           _phoneController.text = doc.data()?['phone'] ?? "";
@@ -58,12 +55,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.dispose();
   }
 
-  // --- Logic: Profile Photo Upload ---
+  // Logic: Profile Photo Upload
   Future<void> _pickAndUploadImage() async {
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(
       source: ImageSource.gallery,
-      imageQuality: 50, // Efficient for student data plans
+      imageQuality: 50,
     );
 
     if (image == null) return;
@@ -82,7 +79,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       // Get URL and update Firebase Auth profile
       String downloadUrl = await snapshot.ref.getDownloadURL();
       await user?.updatePhotoURL(downloadUrl);
-      await user?.reload(); // Refresh local user state
+      await user?.reload();
 
       if (mounted) {
         setState(() => _isSaving = false);
@@ -93,22 +90,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isSaving = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Upload failed: $e")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Upload failed: $e")));
       }
     }
   }
 
-  // --- Logic: Update Text Profile ---
+  // Update Text Profile
   Future<void> _updateProfile() async {
     setState(() => _isSaving = true);
 
     try {
-      // 1. Update Firebase Auth (for Name)
+      // Update Firebase Auth (for Name)
       await user?.updateDisplayName(_nameController.text.trim());
 
-      // 2. Update Firestore (for everything else)
+      // Update Firestore (for everything else)
       await SettingsService().updateUserSettings({
         "fullName": _nameController.text.trim(),
         "phone": _phoneController.text.trim(),
@@ -123,7 +120,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Sync Error: $e")));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Sync Error: $e")));
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -185,9 +184,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: TextButton(
                 onPressed: () async {
                   await AuthService().logout();
-                  // StreamBuilder handles navigation automatically
                 },
-                child: const Text("Log Out", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                child: const Text(
+                  "Log Out",
+                  style: TextStyle(
+                    color: Colors.redAccent,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ),
           ],
@@ -196,7 +200,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // --- UI Components ---
+  // UI Components
 
   Widget _buildProfileHeader() {
     return Row(
@@ -215,29 +219,48 @@ class _SettingsScreenState extends State<SettingsScreen> {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(user?.displayName ?? "John Doe",
-                style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-            Text(user?.email ?? "john@example.rw",
-                style: const TextStyle(color: Colors.white38, fontSize: 14)),
+            Text(
+              user?.displayName ?? "John Doe",
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text(
+              user?.email ?? "john@example.rw",
+              style: const TextStyle(color: Colors.white38, fontSize: 14),
+            ),
             const SizedBox(height: 4),
             GestureDetector(
               onTap: _isSaving ? null : _pickAndUploadImage,
               child: Text(
                 _isSaving ? "Uploading..." : "Change Photo",
-                style: const TextStyle(color: KigaliApp.accentGold, fontWeight: FontWeight.bold, fontSize: 13),
+                style: const TextStyle(
+                  color: KigaliApp.accentGold,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
               ),
             ),
           ],
-        )
+        ),
       ],
     );
   }
 
-  Widget _buildInputField(String label, TextEditingController controller, {bool enabled = true}) {
+  Widget _buildInputField(
+    String label,
+    TextEditingController controller, {
+    bool enabled = true,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+        Text(
+          label,
+          style: const TextStyle(color: Colors.white70, fontSize: 13),
+        ),
         const SizedBox(height: 8),
         TextField(
           controller: controller,
@@ -246,8 +269,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           decoration: InputDecoration(
             filled: true,
             fillColor: KigaliApp.cardNavy,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
           ),
         ),
         const SizedBox(height: 16),
@@ -263,28 +292,66 @@ class _SettingsScreenState extends State<SettingsScreen> {
         onPressed: _isSaving ? null : _updateProfile,
         style: ElevatedButton.styleFrom(
           backgroundColor: KigaliApp.accentGold,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
         child: _isSaving
-            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-            : const Text("Save Changes", style: TextStyle(fontWeight: FontWeight.bold, color: KigaliApp.primaryNavy)),
+            ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              )
+            : const Text(
+                "Save Changes",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: KigaliApp.primaryNavy,
+                ),
+              ),
       ),
     );
   }
 
   Widget _buildSectionLabel(String label) => Padding(
     padding: const EdgeInsets.only(bottom: 16),
-    child: Text(label, style: const TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+    child: Text(
+      label,
+      style: const TextStyle(
+        color: Colors.white38,
+        fontSize: 11,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 1.2,
+      ),
+    ),
   );
 
-  Widget _buildPreferenceTile({required IconData icon, required String title, required bool value, required Function(bool) onChanged}) {
+  Widget _buildPreferenceTile({
+    required IconData icon,
+    required String title,
+    required bool value,
+    required Function(bool) onChanged,
+  }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 2),
-      decoration: BoxDecoration(color: KigaliApp.cardNavy, borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(
+        color: KigaliApp.cardNavy,
+        borderRadius: BorderRadius.circular(8),
+      ),
       child: ListTile(
         leading: Icon(icon, color: Colors.white38, size: 22),
-        title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 15)),
-        trailing: Switch(value: value, onChanged: onChanged, activeColor: KigaliApp.accentGold),
+        title: Text(
+          title,
+          style: const TextStyle(color: Colors.white, fontSize: 15),
+        ),
+        trailing: Switch(
+          value: value,
+          onChanged: onChanged,
+          activeThumbColor: KigaliApp.accentGold,
+        ),
       ),
     );
   }
@@ -292,7 +359,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildSupportTile(String title) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      title: Text(title, style: const TextStyle(color: Colors.white70, fontSize: 15)),
+      title: Text(
+        title,
+        style: const TextStyle(color: Colors.white70, fontSize: 15),
+      ),
       trailing: const Icon(Icons.chevron_right, color: Colors.white24),
       onTap: () {},
     );

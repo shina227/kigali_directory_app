@@ -23,7 +23,7 @@ class _MapScreenState extends State<MapScreen> {
       backgroundColor: KigaliApp.primaryNavy,
       body: Stack(
         children: [
-          // 1. Interactive Map
+          // Interactive Map
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
@@ -36,17 +36,18 @@ class _MapScreenState extends State<MapScreen> {
             children: [
               // Dark-themed map tiles
               TileLayer(
-                urlTemplate: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+                urlTemplate:
+                    'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
                 subdomains: const ['a', 'b', 'c', 'd'],
                 userAgentPackageName: 'com.kigali.directory',
               ),
 
-              // 2. Database-Driven Markers
+              // Database-Driven Markers
               _buildMarkerLayer(),
             ],
           ),
 
-          // 3. Floating Search Bar (Top)
+          // Floating Search Bar
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -54,15 +55,12 @@ class _MapScreenState extends State<MapScreen> {
             ),
           ),
 
-          // 4. Bottom Horizontal Preview Slider
+          // Bottom Horizontal Preview Slider
           Positioned(
             bottom: 20,
             left: 0,
             right: 0,
-            child: SizedBox(
-              height: 120,
-              child: _buildBottomSlider(),
-            ),
+            child: SizedBox(height: 120, child: _buildBottomSlider()),
           ),
         ],
       ),
@@ -79,7 +77,6 @@ class _MapScreenState extends State<MapScreen> {
         final markers = snapshot.data!.docs.map((doc) {
           final data = doc.data() as Map<String, dynamic>;
 
-          // Using num to double cast to prevent Firestore int/double errors
           final double lat = (data['latitude'] as num?)?.toDouble() ?? -1.9441;
           final double lng = (data['longitude'] as num?)?.toDouble() ?? 30.0619;
 
@@ -99,7 +96,7 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  // --- UI Components ---
+  // UI Components
 
   void _showPlacePreview(double lat, double lng) {
     _mapController.move(LatLng(lat, lng), 15.0);
@@ -114,9 +111,19 @@ class _MapScreenState extends State<MapScreen> {
           decoration: const BoxDecoration(
             color: KigaliApp.accentGold,
             shape: BoxShape.circle,
-            boxShadow: [BoxShadow(color: Colors.black45, blurRadius: 6, offset: Offset(0, 3))],
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black45,
+                blurRadius: 6,
+                offset: Offset(0, 3),
+              ),
+            ],
           ),
-          child: const Icon(Icons.location_on, color: KigaliApp.primaryNavy, size: 20),
+          child: const Icon(
+            Icons.location_on,
+            color: KigaliApp.primaryNavy,
+            size: 20,
+          ),
         ),
       ],
     );
@@ -129,7 +136,13 @@ class _MapScreenState extends State<MapScreen> {
       decoration: BoxDecoration(
         color: KigaliApp.cardNavy,
         borderRadius: BorderRadius.circular(15),
-        boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 10, offset: Offset(0, 4))],
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black45,
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -145,7 +158,11 @@ class _MapScreenState extends State<MapScreen> {
               ),
             ),
           ),
-          const VerticalDivider(color: Colors.white10, indent: 15, endIndent: 15),
+          const VerticalDivider(
+            color: Colors.white10,
+            indent: 15,
+            endIndent: 15,
+          ),
           IconButton(
             icon: const Icon(Icons.tune, color: Colors.greenAccent),
             onPressed: () {},
@@ -184,8 +201,10 @@ class _MapScreenState extends State<MapScreen> {
         _showPlacePreview(lat, lng);
 
         Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => DescriptionScreen(placeData: data))
+          context,
+          MaterialPageRoute(
+            builder: (context) => DescriptionScreen(placeData: data),
+          ),
         );
       },
       child: Container(
@@ -203,9 +222,15 @@ class _MapScreenState extends State<MapScreen> {
               borderRadius: BorderRadius.circular(12),
               child: Image.network(
                 data['image'] ?? "https://via.placeholder.com/80",
-                width: 80, height: 80, fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) =>
-                    Container(color: Colors.white10, width: 80, height: 80, child: const Icon(Icons.image, color: Colors.white24)),
+                width: 80,
+                height: 80,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  color: Colors.white10,
+                  width: 80,
+                  height: 80,
+                  child: const Icon(Icons.image, color: Colors.white24),
+                ),
               ),
             ),
             const SizedBox(width: 12),
@@ -216,16 +241,27 @@ class _MapScreenState extends State<MapScreen> {
                 children: [
                   Text(
                     data['title'] ?? "Place",
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   Text(
-                      data['location'] ?? "Kiyovu, Kigali",
-                      style: const TextStyle(color: Colors.white38, fontSize: 12)
+                    data['location'] ?? "Kiyovu, Kigali",
+                    style: const TextStyle(color: Colors.white38, fontSize: 12),
                   ),
                   const SizedBox(height: 8),
-                  const Text("Open Now", style: TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold, fontSize: 11)),
+                  const Text(
+                    "Open Now",
+                    style: TextStyle(
+                      color: Colors.greenAccent,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 11,
+                    ),
+                  ),
                 ],
               ),
             ),
